@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+rm -f "$BUILD_DIR"/*.xpi
+VERSION="$( cat "$BUILD_DIR/firefox/manifest.json" | jq -r .version )"
+rsync -a "$BUILD_DIR/firefox/" "$BUILD_DIR/firefox-amo/"
+cat "$BUILD_DIR/firefox/manifest.json" | jq ".version=\"$VERSION.0\"" | jq 'del(.applications.gecko.update_url)' > "$BUILD_DIR/firefox-amo/manifest.json"
+VERSION="$( cat "$BUILD_DIR/firefox-amo/manifest.json" | jq -r .version )"
+
+echo "Building $VERSION"
+web-ext build -s "$BUILD_DIR/firefox-amo/" -a "$BUILD_DIR"

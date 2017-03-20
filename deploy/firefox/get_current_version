@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+TMPDIR=`mktemp -d`
+aws --profile $AWS_PROFILE s3 cp --quiet "s3://$S3_BUCKET/firefox/updates.json" $TMPDIR/updates.json
+cat $TMPDIR/updates.json | jq -r ".addons[\"$ADDON_ID\"].updates[-1].version"
+rm $TMPDIR/updates.json
+rmdir $TMPDIR

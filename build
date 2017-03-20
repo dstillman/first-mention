@@ -1,0 +1,277 @@
+#!/bin/bash -eu
+shopt -s extglob
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$DIR"
+
+. "$DIR"/init.sh
+
+if [ ! -d "$BUILD_DIR" ]; then
+	echo "$BUILD_DIR doesn't exist"
+	exit 1
+fi
+
+function usage {
+	cat >&2 <<DONE
+Usage: $0 -p PLATFORMS [-v VERSION] [-d]
+Options
+ -p                  platforms (b=browserExt, s=Safari, k=bookmarklet, a=all)
+ -v                  version
+ -d                  debug build
+DONE
+	exit 1
+}
+
+BUILD_BROWSEREXT=0
+BUILD_SAFARI=0
+BUILD_BOOKMARKLET=0
+DEV=0
+VERSION=""
+while getopts "p:v:d" opt; do
+	case $opt in
+		p)
+			if [ "$OPTARG" = "a" ]; then
+				BUILD_BROWSEREXT=1
+				BUILD_SAFARI=1
+				BUILD_BOOKMARKLET=1
+			else
+				for i in `seq 0 1 $((${#OPTARG}-1))`
+				do
+					case ${OPTARG:i:1} in
+						b) BUILD_BROWSEREXT=1;;
+						s) BUILD_SAFARI=1;;
+						k) BUILD_BOOKMARKLET=1;;
+						*)
+							echo "$0: Invalid platform option ${OPTARG:i:1}"
+							usage
+							;;
+					esac
+				done
+			fi
+			;;
+		v)
+			VERSION="$OPTARG"
+			;;
+		d)
+			DEV=1
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+if [[ $BUILD_BROWSEREXT -eq 0 ]] && [[ $BUILD_SAFARI -eq 0 ]] && [[ $BUILD_BOOKMARKLET -eq 0 ]]; then
+	usage
+fi
+
+PROCESS_CMD="browserify -t babelify"
+
+rm -rf "$BUILD_DIR"/*
+mkdir -p "$BUILD_DIR/tmp/common"
+if [ $BUILD_BROWSEREXT -eq 1 ]; then
+	mkdir "$BUILD_DIR/tmp/browserExt"
+	mkdir "$BUILD_DIR/browserExt"
+fi
+if [ $BUILD_SAFARI -eq 1 ]; then
+	mkdir "$BUILD_DIR/tmp/safari"
+	mkdir "$BUILD_DIR/safari"
+fi
+if [ $BUILD_BOOKMARKLET -eq 1 ]; then
+	mkdir "$BUILD_DIR/tmp/bookmarklet"
+	mkdir "$BUILD_DIR/bookmarklet"
+fi
+
+if [[ $BUILD_BROWSEREXT -eq 1 ]] || [[ $BUILD_SAFARI -eq 1 ]]; then
+	BUILD_EXTENSION=1
+else
+	BUILD_EXTENSION=0
+fi
+
+# Stage common files used in all versions
+rsync -r --include '**/' --exclude 'tooltip.*' --include '*.js' --exclude '*' src/common/ "$BUILD_DIR/tmp/common/"
+cp .babelrc package.json "$BUILD_DIR/tmp/common/"
+ln -s "$(pwd)/node_modules" "$BUILD_DIR/tmp/common/node_modules"
+
+# Stage common files used only in extensions
+if [[ $BUILD_EXTENSION -eq 1 ]]; then
+	sass --sourcemap=none src/common/content/tooltip.scss "$BUILD_DIR/tmp/common/content/first_mention.css"
+fi
+
+# Copy common files to staging
+for dest in browserExt safari bookmarklet; do
+	if [[ $dest = "browserExt" ]] && [[ $BUILD_BROWSEREXT -ne 1 ]]; then continue; fi
+	if [[ $dest = "safari" ]] && [[ $BUILD_SAFARI -ne 1 ]]; then continue; fi
+	if [[ $dest = "bookmarklet" ]] && [[ $BUILD_BOOKMARKLET -ne 1 ]]; then continue; fi
+	
+	rsync -a "$BUILD_DIR/tmp/common/" "$BUILD_DIR/tmp/$dest/"
+done
+
+# Copy extension files
+for dest in browserExt safari; do
+	if [[ $dest = "browserExt" ]] && [[ $BUILD_BROWSEREXT -ne 1 ]]; then continue; fi
+	if [[ $dest = "safari" ]] && [[ $BUILD_SAFARI -ne 1 ]]; then continue; fi
+	
+	# Copy external files straight to destination
+	cp deps/xregexp/xregexp-all.js "$BUILD_DIR/$dest/xregexp.js"
+	cp src/common/content/tooltip.min.js "$BUILD_DIR/$dest/"
+	cp "$BUILD_DIR/tmp/$dest/content/first_mention.css" "$BUILD_DIR/$dest/"
+	cp src/extension/installed.html "$BUILD_DIR/$dest/"
+	cp src/extension/installed.js "$BUILD_DIR/$dest/"
+	cp src/extension/demo.html "$BUILD_DIR/$dest/"
+	
+	# Copy extension-only files to staging
+	rsync -r src/extension/ "$BUILD_DIR/tmp/$dest/background/"
+	# Overlay version-specific files
+	cp src/$dest/firstMention.js "$BUILD_DIR/tmp/$dest/background/"
+	rsync -r --exclude=firstMention.js src/$dest/ "$BUILD_DIR/tmp/$dest/background/"
+	
+	# Add browserify-shim config to have extension use XRegExp global, which allows use of original,
+	# unmodified file for review purposes
+	cat package.json package-extension.json | jq -s add > "$BUILD_DIR/tmp/$dest/package.json"
+	
+	# Set Babel environment
+	if [[ $dest = "browserExt" ]]; then
+		CMD_ENV=modern
+		IS_BROWSEREXT=true
+		IS_SAFARI=false
+	elif [[ $dest = "safari" ]]; then
+		CMD_ENV=compat
+		IS_BROWSEREXT=false
+		IS_SAFARI=true
+	fi
+	
+	# Allow code for other environments to be removed with unreachable-branch-transform
+	patterns=(
+		"FirstMention\.isExtension/true"
+		"FirstMention\.isBrowserExt/$IS_BROWSEREXT"
+		"FirstMention\.isSafari/$IS_SAFARI"
+		"FirstMention\.isBookmarklet/false"
+		"FirstMention\.cacheEnabled/false"
+		"FirstMention\.isiOS/false"
+	)
+	# If not dev mode, remove console.log() calls
+	if [ $DEV -eq 0 ]; then
+		patterns+=('^\s*(\/\/\s*)?console.log\(.+\n$/')
+	fi
+	for pattern in "${patterns[@]}"; do
+		perl -pi -e "s/$pattern/g" "$BUILD_DIR"/tmp/$dest/+(content|background)/*.js
+	done
+	
+	# Build background and content bundles
+	BABEL_ENV=$CMD_ENV $PROCESS_CMD \
+		-t unreachable-branch-transform \
+		-x xregexp \
+		"$BUILD_DIR/tmp/$dest/background/background.js" \
+		> "$BUILD_DIR/$dest/background.js"
+	BABEL_ENV=$CMD_ENV $PROCESS_CMD \
+		-t unreachable-branch-transform \
+		"$BUILD_DIR/tmp/$dest/content/content.js" \
+		> "$BUILD_DIR/$dest/content.js"
+	# Word list
+	BABEL_ENV=$CMD_ENV $PROCESS_CMD \
+		--standalone WordBlacklist \
+		"$BUILD_DIR/tmp/$dest/background/wordBlacklist.js" \
+		> "$BUILD_DIR/$dest/wordBlacklist.js"
+done
+
+# browserExt-only files
+if [ $BUILD_BROWSEREXT -eq 1 ]; then
+	# Copy images
+	mkdir "$BUILD_DIR/browserExt/icons"
+	for size in 32 48 96 128 256; do
+		cp "images/icon_$size.png" "$BUILD_DIR/browserExt/icons/"
+	done
+	
+	mv "$BUILD_DIR/browserExt" "$BUILD_DIR/chrome"
+	rsync -a "$BUILD_DIR/chrome/" "$BUILD_DIR/firefox/"
+	
+	cp src/browserExt/manifest.json "$BUILD_DIR/chrome/"
+	# Add 'applications' key for Firefox
+	cat src/browserExt/manifest.json src/firefox/manifest-include.json | jq -s add > "$BUILD_DIR/firefox/manifest.json"
+	
+	# Set version in manifest; defaults to 0.0
+	if [ -n "$VERSION" ]; then
+		for dest in chrome firefox; do
+			cat "$BUILD_DIR/$dest/manifest.json" | jq ".version=\"$VERSION\"" > "$BUILD_DIR/$dest/manifest.json.new"
+			mv "$BUILD_DIR/$dest/manifest.json.new" "$BUILD_DIR/$dest/manifest.json"
+		done
+	fi
+fi
+
+# Safari-only files
+if [ $BUILD_SAFARI -eq 1 ]; then
+	# Copy images
+	cp "images/icon_128.png" "$BUILD_DIR/safari/Icon-64.png"
+	mkdir "$BUILD_DIR/safari/icons/"
+	cp "images/icon_256.png" "$BUILD_DIR/safari/icons/icon_256.png"
+	
+	cp "$DIR/src/safari/Info.plist" "$BUILD_DIR/safari/"
+	cp "$DIR/src/safari/global.html" "$BUILD_DIR/safari/"
+	
+	# Set version in Info.plist
+	if [ -n "$VERSION" ]; then
+		SAFARI_VERSION="$VERSION"
+	else
+		SAFARI_VERSION="0.0"
+	fi
+	perl -pi -e "s/\[VERSION]/$SAFARI_VERSION/g" "$BUILD_DIR/safari/Info.plist"
+	
+	mv "$BUILD_DIR/safari/" "$BUILD_DIR/safari.safariextension"
+fi
+
+# Build bookmarklet
+if [ $BUILD_BOOKMARKLET -eq 1 ]; then
+	rsync -r src/bookmarklet/ "$BUILD_DIR/tmp/bookmarklet/background/"
+	
+	perl -pi -e 's/^.*IF_BOOKMARKLET.*$//g' "$BUILD_DIR/tmp/bookmarklet/content/content.js"
+	
+	# Create minified CSS file
+	sass --sourcemap=none --style=compressed src/common/content/tooltip.scss "$BUILD_DIR/bookmarklet/first_mention.css"
+	
+	# Allow code for other environments to be removed with unreachable-branch-transform
+	patterns=(
+		"FirstMention\.isSafari && FirstMention\.isExtension/false"
+		"FirstMention\.isExtension/false"
+		"FirstMention\.isBrowserExt/false"
+		"FirstMention\.isBookmarklet/true"
+		"FirstMention\.cacheEnabled/false"
+	)
+	# If not dev mode, remove console.log() calls
+	if [ $DEV -eq 0 ]; then
+		patterns+=('^\s*(\/\/\s*)?console.log\(.+\n$/')
+	fi
+	for pattern in "${patterns[@]}"; do
+		perl -pi -e "s/$pattern/g" "$BUILD_DIR"/tmp/bookmarklet/+(content|background)/*.js
+	done
+	
+	# Create bundle
+	BABEL_ENV=compat $PROCESS_CMD \
+		-t unreachable-branch-transform \
+		-r xregexp \
+		"$BUILD_DIR/tmp/bookmarklet/content/content.js" > "$BUILD_DIR/bookmarklet/tmp.js"
+	
+	./node_modules/.bin/uglifyjs \
+		--preamble "/* First Mention [VERSION] | https://danstillman.com/first_mention */" \
+		"$BUILD_DIR/bookmarklet/tmp.js" | cat - src/common/content/tooltip.min.js \
+		> "$BUILD_DIR/bookmarklet/first_mention.js"
+	
+	rm "$BUILD_DIR"/bookmarklet/tmp*.js
+	
+	# Update version placeholder
+	if [ -n "$VERSION" ]; then
+		BOOKMARKLET_VERSION="$VERSION"
+	else
+		BOOKMARKLET_VERSION="0.0"
+	fi
+	perl -pi -e "s/\[VERSION]/$BOOKMARKLET_VERSION/g" "$BUILD_DIR/bookmarklet/first_mention.js"
+	
+	# Rename dev version
+	if [ $DEV -eq 1 ]; then
+		mv "$BUILD_DIR/bookmarklet" "$BUILD_DIR/bookmarklet-dev"
+	fi
+fi
+
+rm -rf "$BUILD_DIR/tmp"
+echo Done

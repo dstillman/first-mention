@@ -1,0 +1,45 @@
+#!/bin/bash
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+function usage {
+	cat >&2 <<DONE
+Usage: $0 [-v VERSION] [-d]
+Options
+ -v                  version (required for non-debug build)
+ -d                  debug build
+DONE
+	exit 1
+}
+
+DEV=0
+VERSION=""
+while getopts "v:dh" opt; do
+	case $opt in
+		v)
+			VERSION="-v $OPTARG"
+			;;
+		d)
+			DEV=1
+			;;
+		h)
+			usage
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+SUFFIX=""
+if [ $DEV -eq 1 ]; then
+	SUFFIX="-d"
+elif [ -z "$VERSION" ]; then
+	echo "-v is required for non-debug build"
+	exit 1
+fi
+
+"$ROOT_DIR/build" -p k $VERSION $SUFFIX
+"$DIR/upload_bookmarklet" $SUFFIX

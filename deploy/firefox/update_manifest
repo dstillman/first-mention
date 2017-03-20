@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""
+Update a WebExtension build manifest with info on a given build
+"""
+import argparse
+import sys
+import os
+import subprocess
+import shutil
+import json
+import traceback
+from distutils.version import StrictVersion
+
+parser = argparse.ArgumentParser(
+    description='Update a WebExtension build manifest with info on a given build',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+parser.add_argument('-f', '--file', required=True, help="path to updates.json")
+parser.add_argument('-v', '--version', required=True, help='version number of XPI')
+parser.add_argument('-s', '--sha', required=True, help="SHA256 of XPI")
+
+args = parser.parse_args()
+
+def main():
+    try:
+        file = args.file
+        version = args.version
+        sha = args.sha
+        
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.dirname(os.path.dirname(script_dir))
+        
+        # Parse config.sh
+        cfg = {}
+        required_vars = set(['ADDON_ID', 'S3_BUCKET'])
+        with open(os.path.join(root_dir, 'config.sh')) as f:
+            for line in f:
+                if '=' not in line:
+                    continue
+                key, val = line.split('=')
+                cfg[key.strip()] = val.strip()
+        
+        missing_vars = required_vars - set(cfg.keys())
+        if len(missing_vars) > 0:
+            raise RuntimeError(
+                "Required variables not found in config.sh: {0}".format(missing_vars)
+            )
+        
+        # Read in existing file
+        with open(file) as f:
+            manifest = json.loads(f.read())
+        
+        updates = manifest['addons'][cfg['ADDON_ID']]['updates']
+        
+        if any(u['version'] == version for u in updates):
+            sys.stderr.write(
+                "Update with version '{0}' already exists in manifest\n"
+                .format(version)
+            )
+            return 1
+        
+        url = "https://{0}.s3.amazonaws.com/firefox/First_Mention-{1}.xpi"
+        updates.append({
+            "version": version,
+            "update_link": url.format(cfg['S3_BUCKET'], version),
+            "update_hash": "sha256:" + sha
+        })
+        updates = sorted(updates, key=lambda item: StrictVersion(item['version']))
+        
+        # Keep last 5 versions
+        manifest['addons'][cfg['ADDON_ID']]['updates'] = updates[-5:]
+        
+        # Back up JSON file
+        shutil.copy2(file, file + '.bak')
+        
+        # Write new file
+        manifest = json.dumps(manifest, indent=2)
+        with open(file, 'w') as f:
+            f.write(manifest + "\n")
+        
+        print(manifest)
+        
+        return 0
+    
+    except Exception as err:
+        sys.stderr.write("\n" + traceback.format_exc())
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())

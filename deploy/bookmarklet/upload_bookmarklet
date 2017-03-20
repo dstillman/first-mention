@@ -1,0 +1,55 @@
+#!/bin/bash
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+DEV=0
+while getopts "d" opt; do
+	case $opt in
+		d)
+			DEV=1
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+SUFFIX=""
+if [ $DEV -eq 1 ]; then
+	SUFFIX="-dev"
+fi
+
+rsync -a "$BUILD_DIR/bookmarklet$SUFFIX/" "$BUILD_DIR/bookmarklet$SUFFIX-deploy/"
+
+DEPLOY_DIR="$BUILD_DIR/bookmarklet$SUFFIX-deploy"
+
+if [ ! -e "$DEPLOY_DIR" ]; then
+	echo "$DEPLOY_DIR does not exist"
+	exit 1
+fi
+
+CSS_HASH=$(md5 -q "$DEPLOY_DIR/first_mention.css" | cut -c 1-10)
+
+# Add hash to CSS file
+mv "$DEPLOY_DIR/first_mention.css" "$DEPLOY_DIR/first_mention.$CSS_HASH.css"
+
+# Update CSS link
+perl -pi -e "s/bookmarklet\/first_mention.css/bookmarklet$SUFFIX\/first_mention.$CSS_HASH.css/g" "$DEPLOY_DIR"/first_mention*.js
+
+# Gzip JS file and rename back to .js
+gzip "$DEPLOY_DIR"/first_mention*.js
+for f in "`ls "$DEPLOY_DIR"/first_mention*.js.gz`"; do
+	mv "$f" "${f%.*}"
+done
+
+# Gzip CSS file
+gzip "$DEPLOY_DIR/first_mention.$CSS_HASH.css"
+mv "$DEPLOY_DIR/first_mention.$CSS_HASH.css.gz" "$DEPLOY_DIR/first_mention.$CSS_HASH.css"
+
+# Upload to S3
+aws --profile $AWS_PROFILE s3 sync --exclude '*' --include '*.css' --content-encoding 'gzip' --cache-control 'public, max-age=31536000, immutable' "$DEPLOY_DIR/" s3://$S3_BUCKET/bookmarklet$SUFFIX/
+aws --profile $AWS_PROFILE s3 sync --exclude '*' --include '*.js' --content-encoding 'gzip' --cache-control 'no-cache' "$DEPLOY_DIR/" s3://$S3_BUCKET/bookmarklet$SUFFIX/
+sleep 1
+aws --profile $AWS_PROFILE s3 rm --recursive --exclude '*.js' --exclude "*.$CSS_HASH.css" s3://$S3_BUCKET/bookmarklet$SUFFIX/

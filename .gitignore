@@ -1,0 +1,4 @@
+config.sh
+dist
+node_modules/
+.sass-cache/

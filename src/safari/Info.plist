@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Author</key>
+	<string>Dan Stillman</string>
+	<key>Builder Version</key>
+	<string>12602.4.8</string>
+	<key>CFBundleDisplayName</key>
+	<string>First Mention</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.danstillman.firstmention</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>[VERSION]</string>
+	<key>CFBundleVersion</key>
+	<string>[VERSION]</string>
+	<key>Chrome</key>
+	<dict>
+		<key>Global Page</key>
+		<string>global.html</string>
+	</dict>
+	<key>Content</key>
+	<dict>
+		<key>Scripts</key>
+		<dict>
+			<key>End</key>
+			<array>
+				<string>tooltip.min.js</string>
+				<string>content.js</string>
+			</array>
+		</dict>
+		<key>Stylesheets</key>
+		<array>
+			<string>first_mention.css</string>
+		</array>
+	</dict>
+	<key>Description</key>
+	<string>See the first time a name was mentioned in the article you’re reading with a single click</string>
+	<key>DeveloperIdentifier</key>
+	<string>0000000000</string>
+	<key>ExtensionInfoDictionaryVersion</key>
+	<string>1.0</string>
+	<key>Permissions</key>
+	<dict>
+		<key>Website Access</key>
+		<dict>
+			<key>Include Secure Pages</key>
+			<true/>
+			<key>Level</key>
+			<string>All</string>
+		</dict>
+	</dict>
+	<key>Update From Gallery</key>
+	<true/>
+	<key>Update Manifest URL</key>
+	<string>https://first-mention.s3.amazonaws.com/safari/update.plist</string>
+	<key>Website</key>
+	<string>https://danstillman.com/firstmention</string>
+</dict>
+</plist>

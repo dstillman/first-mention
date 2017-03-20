@@ -1,0 +1,8 @@
+# Amazon
+AWS_PROFILE=first-mention-deploy
+S3_BUCKET=first-mention
+
+# Mozilla
+ADDON_ID=
+AMO_API_KEY=""
+AMO_API_SECRET=""

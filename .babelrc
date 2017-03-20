@@ -1,0 +1,16 @@
+{
+	"plugins": [
+		"transform-async-to-generator",
+		"transform-es2015-modules-commonjs"
+	],
+	"env": {
+		"modern": {},
+		"compat": {
+			"presets": ["es2015"],
+			"plugins": [
+				"transform-runtime",
+				"transform-regenerator"
+			]
+		}
+	}
+}

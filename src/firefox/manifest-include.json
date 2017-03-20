@@ -1,0 +1,8 @@
+{
+	"applications": {
+		"gecko": {
+			"id": "first_mention@danstillman.com",
+			"update_url": "https://first-mention.s3.amazonaws.com/firefox/updates.json"
+		}
+	}
+}

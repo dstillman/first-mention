@@ -1,0 +1,22 @@
+#!/bin/bash -eu
+
+#
+# Upload signed XPI to S3 with correct content type
+#
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+S3_PATH="$S3_BUCKET/firefox/"
+XPI="`"$DIR"/get_xpi_path`"
+VERSION="$( unzip -p "$XPI" manifest.json | jq -r .version )"
+
+if ! unzip -l "$XPI" | grep --quiet META-INF; then
+	echo "$XPI_FILE is not signed"
+	exit 1
+fi
+
+aws --profile first-mention-deploy s3 cp --content-type application/x-xpinstall "$XPI" s3://${S3_PATH}First_Mention-$VERSION.xpi
+rm "$XPI"

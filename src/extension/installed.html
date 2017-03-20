@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<style>
+			html, body {
+				height: 100%;
+			}
+			
+			body {
+				margin: 0;
+				padding: 0;
+				font-family: Helvetica, sans-serif;
+				background: aliceblue;
+			}
+			
+			#logo {
+				margin-top: 1.8em;
+				margin-bottom: 1.8em;
+				margin-right: .9em;
+			}
+			
+			a, .link {
+				color: #2b85c0;
+			}
+			
+			a:hover, .link:hover {
+				color: #3bacf7;
+			}
+			
+			main {
+				max-width: 500px;
+				margin: 0 auto;
+				padding: 0 4em 1.3em;
+				background: white;
+			}
+			
+			header {
+				font-family: Lucida Grande, Lucida Sans Unicode, Helvetica, sans-serif;
+				text-align: center;
+			}
+			
+			h2 {
+				margin-top: -.25em;
+				font-size: 24px;
+				white-space: nowrap;
+				margin-bottom: 1.2em;
+			}
+			
+			article {
+				font-size: 17px;
+				line-height: 1.4em;
+			}
+			
+			#demo {
+				background: #333;
+				padding: 0;
+				border-radius: 7px;
+				height: 29em;
+				border: 0;
+				width: 100%;
+				color: #fff;
+				font-family: Palatino, Georgia, serif;
+				overflow: hidden;
+			}
+			
+			#close-tab-container {
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="background"></div>
+		<main>
+			<header>
+				<img id="logo" src="icons/icon_256.png" width="128" height="128">
+				<h2>You’ve installed First Mention!</h2>
+			</header>
+			<article>
+				<p>Now, when you see a name you don’t remember in something you’re reading, just click on it to see it in the original context.</p>
+				<p>You can try it out right here. Click “Pavlovitch” in the middle of the paragraph below.</p>
+				<iframe id="demo" src="demo.html"></iframe>
+				<p>That’s it! For more info, or to report a problem, visit the <a href="https://danstillman.com/firstmention">First Mention site</a>.</p>
+				<div id="close-tab-container"><button id="close-tab">Close this tab</button></div>
+				<script src="installed.js"></script>
+			</article>
+		</main>
+	</body>
+</html>

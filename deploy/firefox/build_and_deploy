@@ -1,0 +1,59 @@
+#!/bin/bash
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+function usage {
+	echo Current version: `"$DIR/get_current_version"` >&2
+	echo >&2
+	cat >&2 <<DONE
+Usage: $0 -v VERSION
+DONE
+	exit 1
+}
+
+VERSION=""
+while getopts "v:" opt; do
+	case $opt in
+		v)
+			VERSION="$OPTARG"
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+if [ -z "$VERSION" ]; then
+	usage
+fi
+
+CURRENT_VERSION="$("$DIR/get_current_version")"
+CMP=$(node -e "var cmp = require('semver-compare'); console.log(cmp('$VERSION', '$CURRENT_VERSION'))")
+if [ "$CMP" = "-1" ]; then
+	echo "$VERSION must be greater than $CURRENT_VERSION"
+	exit 1
+fi
+if [ "$CMP" = "0" ]; then
+	echo "$VERSION is the current version"
+	exit 1
+fi
+if [ "$CMP" != "1" ]; then
+	echo "Unexpected response $CMP from semver-compare"
+	exit 1
+fi
+
+cd "$ROOT_DIR"
+./build -p b -v "$VERSION"
+
+# Sign and push unlisted version
+cd "$DIR"
+./sign_xpi
+./push_xpi
+
+# Also build AMO version for uploading
+./amo_build

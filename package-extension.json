@@ -1,0 +1,11 @@
+{
+  "browserify": {
+    "transform": [
+        "browserify-shim"
+    ]
+  },
+  "browserify-shim": {
+    "xregexp": "global:XRegExp",
+    "./wordBlacklist": "global:WordBlacklist"
+  }
+}

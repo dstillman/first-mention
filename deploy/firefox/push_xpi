@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+cd "$DIR"
+
+XPI="`./get_xpi_path`"
+VERSION="$( cat "$BUILD_DIR/firefox/manifest.json" | jq -r .version )"
+HASH="$( shasum -a 256 "$XPI" | cut -d' ' -f1 )"
+
+echo "Uploading signed XPI"
+./upload_signed_xpi
+aws --profile $AWS_PROFILE s3 cp s3://$S3_BUCKET/firefox/updates.json "$BUILD_DIR/updates.json"
+./update_manifest -f "$BUILD_DIR/updates.json" -v $VERSION -s $HASH
+aws --profile $AWS_PROFILE s3 cp "$BUILD_DIR/updates.json" s3://$S3_BUCKET/firefox/updates.json
+rm "$BUILD_DIR/updates.json"
