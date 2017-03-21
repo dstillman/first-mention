@@ -21,6 +21,8 @@ If you have grunt installed, you can run `grunt watch` to automatically rebuild 
 
 `npm test`
 
+You can pass options to mocha after `--` (e.g., `npm test -- -b` to bail on error).
+
 ## Acknowledgements
 
 * [Tooltip](https://github.com/darsain/tooltip)
