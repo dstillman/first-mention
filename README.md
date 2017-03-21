@@ -2,7 +2,7 @@
 
 First Mention is a browser extension and bookmarklet that quickly shows you the sentence in which a name first appeared in the article you’re reading.
 
-See the [website](https://danstillman.com/first_mention) for more info and installation instructions.
+See the [website](https://danstillman.com/firstmention/) for more info and installation instructions.
 
 ## Development
 
