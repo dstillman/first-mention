@@ -57,6 +57,6 @@
 	<key>Update Manifest URL</key>
 	<string>https://first-mention.s3.amazonaws.com/safari/update.plist</string>
 	<key>Website</key>
-	<string>https://danstillman.com/firstmention</string>
+	<string>https://danstillman.com/firstmention/</string>
 </dict>
 </plist>
