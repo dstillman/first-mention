@@ -6,3 +6,6 @@ S3_BUCKET=first-mention
 ADDON_ID=
 AMO_API_KEY=""
 AMO_API_SECRET=""
+
+# Apple
+SAFARI_DEVELOPER_ID=
