@@ -21,13 +21,13 @@ if (FirstMention.cacheEnabled) {
 //
 if (FirstMention.isBrowserExt) {
 	// Open tab on first run
-	function handleInstalled(details) {
+	var handleInstalled = function (details) {
 		if (details.reason == 'install') {
 			chrome.tabs.create({
 				url: chrome.runtime.getURL('installed.html')
 			});
 		}
-	}
+	};
 	chrome.runtime.onInstalled.addListener(handleInstalled);
 	
 	// Main message listener

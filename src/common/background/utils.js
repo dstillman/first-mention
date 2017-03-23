@@ -122,10 +122,10 @@ export default {
 			let foundSpace = false;
 			let requireSpace = true;
 			let stopOnNewline = false;
-			function reset() {
+			let reset = function () {
 				foundCapital = false;
 				foundSpace = false;
-			}
+			};
 			for (let i = pos - 1; i >= min; i--) {
 				let char = pageText[i];
 				

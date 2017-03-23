@@ -35,7 +35,7 @@ function sendMessage(name, data) {
 	console.log("Calling " + name);
 	
 	if (FirstMention.isExtension) {
-		if (FirstMention.isFirefox) {
+		if (FirstMention.isFirefox && FirstMention.browserMajorVersion >= 52) {
 			// WebExtensions support promises natively
 			return browser.runtime.sendMessage({
 				event: name,
