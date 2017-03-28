@@ -47,6 +47,12 @@
 	border-bottom: 1px solid gainsboro;
 }
 
+.first-mention-tooltip.bottom:after {
+	-webkit-transform: rotate(-135deg);
+	-ms-transform: rotate(-135deg);
+	transform: rotate(-135deg);
+}
+
 .first-mention-tooltip.top:after, .first-mention-tooltip.top-left:after, .first-mention-tooltip.top-right:after { bottom: 0; }
 .first-mention-tooltip.bottom:after, .first-mention-tooltip.bottom-left:after, .first-mention-tooltip.bottom-right:after { top: 0; }
 .first-mention-tooltip.top:after, .first-mention-tooltip.bottom:after { left: 50%; }
