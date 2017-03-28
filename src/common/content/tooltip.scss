@@ -7,23 +7,23 @@
 }
 
 .first-mention-tooltip {
-	position: absolute;
-	padding: .8em 1em;
+	position: absolute !important;
+	padding: .8em 1em !important;
 	top: 15px; /* Defines the spacing between tooltip and target position */
-	max-width: 300px;
-	color: #fff;
-	background: #3a3c47;
-	border-radius: 2px;
-	text-shadow: -1px -1px 0 rgba(0,0,0,.2);
-	cursor: default;
-	
-	font-size: 10pt;
-	font-family: sans-serif;
-	line-height: 1.3em;
-	border-radius: 0px;
-	border: 1px solid gainsboro;
-	box-shadow: 5px 6px 16px -7px rgba(0,0,0,0.75);
-	z-index: 2147483647;
+	max-width: 300px !important;
+	color: #3a3c47 !important;
+	background: #fff !important;
+	border-radius: 2px !important;
+	text-shadow: none !important;
+	cursor: default !important;
+	display: block !important;
+	font-size: 10pt !important;
+	font-family: sans-serif !important;
+	line-height: 1.3em !important;
+	border-radius: 0px !important;
+	border: 1px solid gainsboro !important;
+	box-shadow: 5px 6px 16px -7px rgba(0,0,0,0.75) !important;
+	z-index: 2147483647 !important;
 }
 
 .first-mention-highlight {
@@ -162,9 +162,3 @@
 	transform: none;
 	transition-duration: 100ms;
 }
-
-/* Types */
-.first-mention-tooltip.light { color: #3a3c47; background: #fff; text-shadow: none; }
-.first-mention-tooltip.success { background: #8dc572; }
-.first-mention-tooltip.warning { background: #ddc12e; }
-.first-mention-tooltip.error { background: #be6464; }
