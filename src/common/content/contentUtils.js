@@ -229,6 +229,9 @@ export default {
 		// WebKit
 		else if (document.caretRangeFromPoint) {
 			range = document.caretRangeFromPoint(x, y);
+			if (!range) {
+				return;
+			}
 			textNode = range.startContainer;
 			offset = range.startOffset;
 		}
