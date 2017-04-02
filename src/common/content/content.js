@@ -108,11 +108,6 @@ if (FirstMention.isBookmarklet) {
 }
 
 async function onClick(event) {
-	if (getSelection().toString().length) {
-		console.log("Ignoring selection");
-		return;
-	}
-	
 	if (event.type == 'touchstart') {
 		var x = event.touches[0].clientX;
 		var y = event.touches[0].clientY;
@@ -165,26 +160,79 @@ async function onClick(event) {
 
 // Add click listener
 if (!('ontouchstart' in document.documentElement)) {
-	window.addEventListener('click', event => onClick(event), false);
+	let delay = 200;
+	let waiting = false;
+	let timeoutID;
+	let textSelected = false;
+	window.addEventListener('click', function (event) {
+		console.log("Got a click");
+		
+		if (event.button != 0) {
+			console.log("Ignoring non-primary click");
+			return;
+		}
+		
+		// When text is selected, a click clears the selection before we can detect it with
+		// getSelection(), so we set this to true after clicks and double-clicks that result in
+		// selected text so we can ignore the next click, which will clear the selection.
+		if (textSelected) {
+			console.log("Ignoring click after text selection");
+			textSelected = false;
+			return;
+		}
+		
+		// Don't trigger click unless enough time has passed since the last click and enough time elapses
+		// before another one
+		if (timeoutID || waiting) {
+			if (timeoutID) {
+				clearTimeout(timeoutID);
+			}
+			timeoutID = setTimeout(() => {
+				timeoutID = null;
+			}, delay);
+			return;
+		}
+		
+		if (getSelection().toString().length) {
+			console.log("Ignoring selection");
+			textSelected = true;
+			return;
+		}
+		
+		waiting = true;
+		setTimeout(() => {
+			waiting = false;
+			if (timeoutID) {
+				console.log("Ignoring double-click");
+				return;
+			}
+			onClick(event);
+		}, delay);
+	});
+	
+	
+	window.addEventListener('dblclick', function (event) {
+		textSelected = !!getSelection().toString().length;
+	});
 }
 else {
+	let delay = 300;
 	let dragging = false;
 	let waiting = false;
 	let timeoutID;
 	document.body.addEventListener('touchstart', event => dragging = false);
 	document.body.addEventListener('touchmove', event => dragging = true);
 	document.body.addEventListener('touchend', function (event) {
-		// Don't trigger click unless it's been 300 ms since the last tap and 300 ms elapses before
-		// another tap
+		// Don't trigger click unless enough time has passed since the last tap and enough time elapses
+		// before another one
 		if (timeoutID || waiting) {
 			console.log("Clearing timeout");
 			if (timeoutID) {
 				clearTimeout(timeoutID);
 			}
 			timeoutID = setTimeout(() => {
-				//console.log("Time is up");
 				timeoutID = null;
-			}, 300);
+			}, delay);
 			return;
 		}
 		
@@ -202,6 +250,11 @@ else {
 			return;
 		}
 		
+		if (getSelection().toString().length) {
+			console.log("Ignoring selection");
+			return;
+		}
+		
 		waiting = true;
 		setTimeout(() => {
 			waiting = false;
@@ -211,6 +264,6 @@ else {
 			}
 			console.log("Simulating click");
 			onClick(event);
-		}, 300);
+		}, delay);
 	});
 }
