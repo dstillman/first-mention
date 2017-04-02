@@ -265,6 +265,10 @@ export default {
 			let tag = node.tagName.toLowerCase();
 			// Ignore text within a link or button
 			if (tag == 'a' || tag == 'button') return;
+			if (node.getAttribute('contenteditable') == 'true') {
+				console.log("Ignoring click in editable node");
+				return;
+			}
 			if (tag == 'p') {
 				console.log("Found <p> ancestor");
 				break;
