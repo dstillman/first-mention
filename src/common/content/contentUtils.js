@@ -153,17 +153,23 @@ export default {
 						// but they're much riskier to use.)
 						if (containerIsParagraph || paragraphFound) {
 							if (currentNode.tagName == "P") {
+								if (!this.elementIsVisible(currentNode)) return NodeFilter.FILTER_REJECT;
+								
 								console.log("Accepting <p>: " + currentNode.textContent);
 								return NodeFilter.FILTER_ACCEPT;
 							}
 						}
 						else if (currentNode.tagName == "P") {
+							if (!this.elementIsVisible(currentNode)) return NodeFilter.FILTER_REJECT;
+							
 							paragraphFound = true;
 							console.log("Accepting <p>: " + currentNode.textContent);
 							return NodeFilter.FILTER_ACCEPT;
 						}
 						// Otherwise accept divs with text too
 						else if (this.isTextContainer(currentNode)) {
+							if (!this.elementIsVisible(currentNode)) return NodeFilter.FILTER_REJECT;
+							
 							console.log(`Accepting <div> (${currentNode.id}): ${currentNode.textContent}`);
 							return NodeFilter.FILTER_ACCEPT;
 						}
@@ -316,6 +322,11 @@ export default {
 			'I',
 			'STRONG'
 		].includes(element.tagName);
+	},
+	
+	
+	elementIsVisible: function (element) {
+		return element.offsetParent !== null;
 	},
 	
 	
