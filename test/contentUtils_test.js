@@ -126,6 +126,17 @@ describe("ContentUtils", function () {
 				done
 			);
 		});
+		
+		it("should add newline for <br>", function (done) {
+			extract(
+				'<p><span>Foo by</span> <strong>A B<br></strong><span>Bar by</span>&nbsp;<strong><strong>C D<br></strong></strong><span>Qux by</span><strong> E F</strong>&nbsp;&nbsp;</p>'
+					+ '<p id="target">A</p>',
+				win => win.document.getElementById('target').firstChild,
+				0,
+				"Foo by A B\nBar by C D\nQux by E F  \n\n",
+				done
+			);
+		});
 	});
 	
 	

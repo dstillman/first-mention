@@ -217,6 +217,11 @@ export default {
 				}
 			}
 		});
+		// Add newline before <br>, since textContent ignores it
+		var doc = elem.ownerDocument;
+		Array.from(elem.getElementsByTagName('br')).forEach(el => {
+			el.parentNode.insertBefore(doc.createTextNode('\n'), el);
+		});
 		return elem.textContent;
 	},
 	
