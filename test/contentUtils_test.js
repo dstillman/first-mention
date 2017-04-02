@@ -33,9 +33,16 @@ describe("ContentUtils", function () {
 				src: [contentUtilsSrc],
 				virtualConsole,
 				done: function (err, window) {
+					// offsetParent doesn't work in jsdom
+					// https://github.com/tmpvar/jsdom/issues/1261
+					var stub = sinon.stub(window.ContentUtils.default, "elementIsVisible").returns(true);
+					
 					var text = window.ContentUtils.default.extractPageTextBeforeNodeAndOffset(
 						nodeGetter(window), offset
 					);
+					
+					stub.restore();
+					
 					assert.equal(text, expected);
 					done();
 				}
