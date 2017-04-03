@@ -268,8 +268,10 @@ export default {
 		var foundDiv = false;
 		while (node = node.parentNode) {
 			let tag = node.tagName.toLowerCase();
-			// Ignore text within a link or button
-			if (tag == 'a' || tag == 'button') return;
+			// Ignore text within certain elements
+			if (tag == 'a' || tag == 'button' || tag == 'label') {
+				return;
+			}
 			if (node.getAttribute('contenteditable') == 'true') {
 				console.log("Ignoring click in editable node");
 				return;
