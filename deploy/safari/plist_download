@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$( cd "$DIR"/../.. && pwd )"
+
+. "$ROOT_DIR/init.sh"
+
+S3_PATH="$S3_BUCKET/safari/"
+
+aws --profile first-mention-deploy s3 cp s3://${S3_PATH}update.plist "$BUILD_DIR/update.plist"
