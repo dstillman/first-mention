@@ -351,11 +351,10 @@ export default {
 	makeParagraphWithHighlight: function (text, word) {
 		var index = this.getWordPosition(text, word);
 		var p = document.createElement('p');
-		var span = document.createElement('span');
-		span.className = 'first-mention-highlight';
-		span.appendChild(document.createTextNode(word));
+		var mark = document.createElement('mark');
+		mark.appendChild(document.createTextNode(word));
 		p.appendChild(document.createTextNode(text.substr(0, index)));
-		p.appendChild(span);
+		p.appendChild(mark);
 		p.appendChild(document.createTextNode(text.substr(index + word.length)));
 		return p;
 	},
