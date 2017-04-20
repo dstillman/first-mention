@@ -265,31 +265,34 @@ export default {
 		}
 		
 		var foundValidContainer = false;
-		var foundDiv = false;
 		while (node = node.parentNode) {
 			let tag = node.tagName.toLowerCase();
 			// Ignore text within certain elements
 			if (tag == 'a' || tag == 'button' || tag == 'label') {
-				return;
+				console.log(`Ignoring text within ${tag}`);
+				return false;
 			}
 			if (node.getAttribute('contenteditable') == 'true') {
 				console.log("Ignoring click in editable node");
-				return;
-			}
-			if (tag == 'p') {
-				console.log("Found <p> ancestor");
-				break;
-			}
-			if (this.isTextContainer(node)) {
-				console.log(`Found <${node.tagName}> ancestor`);
-				break;
-			}
-			if (tag == 'body') {
-				console.log("Ignoring click on non-paragraph");
 				return false;
 			}
+			if (!foundValidContainer) {
+				if (tag == 'p') {
+					console.log("Found <p> ancestor");
+					foundValidContainer = true;
+					continue;
+				}
+				if (this.isTextContainer(node)) {
+					console.log(`Found <${node.tagName}> ancestor`);
+					foundValidContainer = true;
+					continue;
+				}
+			}
+			if (tag == 'body') {
+				break;
+			}
 		}
-		return true;
+		return foundValidContainer;
 	},
 	
 	

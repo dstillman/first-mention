@@ -171,6 +171,17 @@ describe("ContentUtils", function () {
 			);
 		});
 		
+		it("should reject paragraph inside link", function (done) {
+			click(
+				// Valid in HTML5
+				'<a>'
+					+ '<p id="target">A</p>'
+					+ '</a>',
+				false,
+				done
+			);
+		});
+		
 		it("should ignore div ancestor without content", function (done) {
 			click(
 				'<div>'
