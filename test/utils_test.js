@@ -217,10 +217,18 @@ describe("Utils", function () {
 			],
 			
 			[
-				"number after quotes",
+				"number after comma and quotes",
 				"Maj. Scott Crogg, F-16 pilot, call-sign “Hooter,” 111th Fighter Squadron, Houston: I had just gotten off alert at Ellington Field [in Houston], normally we pull 24-hour alerts, mostly for drug interdiction.",
 				"Crogg"
 			],
+			
+			
+			[
+				"capital letter after quotes",
+				"Eiusmod tempor Elit “incididunt” Consectetur adipiscing Tim elit sed.",
+				"Elit"
+			],
+			
 			
 			[
 				"shouldn't match substring",

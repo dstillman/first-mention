@@ -19,6 +19,25 @@ export default {
 	// Should match contentUtils.js
 	delimiters: "\\s\.,:;…?!\"'“”‘’«»「」\\-—()[\\]{}\\\\/",
 	closingPunctuation: ".…!?\"”»」)\\]}",
+	sentenceEnd: "("
+			// Closing punctuation
+			+ "[\"”»」\\)\\]}]*"
+			// Ending punctuation
+			+ "[.…!?]+"
+			// Ending/closing punctuation (to allow for something like 'foo!).')
+			+ "[.…!?\"”»」\\)\\]}]*"
+		+ ")"
+		// Require one of the following after the punctuation
+		+ "(?:"
+			// End of the content
+			+ "\\s*$"
+			+ "|"
+			// A space not followed by a dash
+			+ "\\s(?![-–—])"
+			+ "|"
+			// Square brackets (e.g., 'foo.[1]')
+			+ "\\s*\\[[^\\]]+]"
+		+ ")",
 	endingPunctuation: ".…!?",
 	
 	
@@ -108,7 +127,7 @@ export default {
 		var spaceRE = new RegExp(space);
 		var closingPunctRE = new RegExp("[" + this.closingPunctuation + "]");
 		var endPunctRE = new RegExp("[" + this.endingPunctuation + "]");
-		var sentenceEndRE = new RegExp("(" + closingPunctRE.source + "+)(?:\\s*$|\\s(?![-–—]))");
+		var sentenceEndRE = new RegExp(this.sentenceEnd);
 		
 		// Search backwards to find sentence end
 		var start = 0;
@@ -267,7 +286,8 @@ export default {
 				}
 				break;
 			}
-			let len = endMatches.index + 1 + endMatches[1].length;
+			
+			let len = endMatches.index + endMatches[1].length;
 			let currentRemainderToEndMatch = currentRemainder.substr(0, len);
 			//console.log("Remainder to end match: " + currentRemainderToEndMatch);
 			let nextRemainder = pageText.substr(
@@ -279,7 +299,7 @@ export default {
 			
 			// Check for various things after the supposed sentence ending that indicate that the
 			// sentence isn't done
-			let afterEndMatch = currentRemainder.substr(len - 1).trim();
+			let afterEndMatch = nextRemainder.trim();
 			if (afterEndMatch.length) {
 				// lowercase letter ("foo. bar")
 				if (this._isLowerCase(afterEndMatch)) {
@@ -300,7 +320,7 @@ export default {
 			abbrLen = this._endsInPossibleAbbreviation(currentRemainder.substr(0, endMatches.index));
 			if (abbrLen) {
 				// Don't stop at possible abbreviation if next word is a number
-				if (nextRemainder.match(/^[0-9]/)) {
+				if (nextRemainder.trim().match(/^[0-9]/)) {
 					skipOffset += len;
 					continue;
 				}
